@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple TODO List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+        }
+        h1 { text-align: center; }
+        input, button {
+            padding: 8px;
+            margin: 5px 0;
+        }
+        ul { list-style: none; padding: 0; }
+        li {
+            padding: 8px 0;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+        }
+        button.delete {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>TODO List</h1>
+
+    <input type="text" id="taskInput" placeholder="Masukkan task">
+    <button onclick="addTodo()">Tambah</button>
+
+    <ul id="todoList"></ul>
+
+    <script>
+        const apiUrl = 'https://chatapi.ddns.net/TODOLIST/todolist.php';
+
+        // Ambil dan tampilkan semua TODO
+        function loadTodos() {
+            console.log('Memuat TODO...');
+            fetch(apiUrl)
+                .then(res => res.json())
+                .then(data => {
+                    console.log('Data TODO:', data);
+                    const list = document.getElementById('todoList');
+                    list.innerHTML = '';
+                    data.forEach(todo => {
+                        const li = document.createElement('li');
+                        li.textContent = todo.task;
+                        const delBtn = document.createElement('button');
+                        delBtn.textContent = 'Hapus';
+                        delBtn.className = 'delete';
+                        delBtn.onclick = () => deleteTodo(todo.id);
+                        li.appendChild(delBtn);
+                        list.appendChild(li);
+                    });
+                })
+                .catch(err => console.error('Error loadTodos:', err));
+        }
+
+        // Tambah TODO baru
+        function addTodo() {
+            const task = document.getElementById('taskInput').value.trim();
+            if (!task) return alert('Task tidak boleh kosong');
+
+            console.log('Mengirim task:', task);
+
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task })
+            })
+            .then(res => {
+                console.log('Status:', res.status);
+                return res.json();
+            })
+            .then(data => {
+                console.log('Response:', data);
+                document.getElementById('taskInput').value = '';
+                loadTodos();
+            })
+            .catch(err => console.error('Fetch error:', err));
+        }
+
+        // Hapus TODO
+        function deleteTodo(id) {
+            console.log('Menghapus TODO ID:', id);
+            fetch(apiUrl, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('Delete response:', data);
+                loadTodos();
+            })
+            .catch(err => console.error('Delete error:', err));
+        }
+
+        // Muat TODO pertama kali
+        loadTodos();
+    </script>
+</body>
+</html>
